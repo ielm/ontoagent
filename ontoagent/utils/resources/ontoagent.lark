@@ -1,0 +1,8 @@
+// Overrides
+^literal: (integer | double | string | boolean | enum | clazz)
+
+// Basic Elements
+clazz: "*" MODULE
+
+// Patterns
+MODULE: /[a-z0-9\_]+[\.[a-z0-9\_]+]*/i

@@ -1,0 +1,147 @@
+<!--
+Component for rendering a view of multiple frames.
+
+Initialize in either of the following ways:
+
+    var viewElement = new OntoAgentViewElement(view);
+    someContainer.append(viewElement);
+
+    -or-
+
+    var viewElement = $("<ontoagent-view></ontoagent-view>")[0];
+    viewElement.view = view;
+    someContainer.append(viewElement);
+
+The view input must be of the following format:
+
+[{
+    id: "@TEST.FRAME.1",
+    fillers: [
+        {
+            slot: "SLOT",
+            facet: "FACET",
+            filler: ...,
+            type: "relation/direct",
+        }, ...
+    ]
+}, ...]
+
+Valid filler types are:
+
+    relation/direct
+    relation/indirect
+    attribute/text
+    attribute/number
+    attribute/boolean
+    attribute/enum
+    attribute/other
+
+-->
+
+<template id="ontoagent-view-element-template">
+
+    {% include 'includes/common-css.html' %}
+    {% include 'includes/common-js.html' %}
+
+    <style>
+        #ontoagent-view-container {
+            height: 100%;
+        }
+    </style>
+
+    <div id="ontoagent-view-container"></div>
+
+</template>
+
+
+<script>
+    let ontoAgentViewElementTemplate = document.querySelector("#ontoagent-view-element-template");
+
+    class OntoAgentViewElement extends HTMLElement {
+
+        constructor(view) {
+            super();
+
+            this.shadow = this.attachShadow({mode: 'open'});
+            this.shadow.appendChild(ontoAgentViewElementTemplate.content.cloneNode(true));
+
+            if (view) {
+                this.view = view;
+            }
+        }
+
+        set view(v) {
+            var self = this;
+            var shadow = $(this.shadow);
+
+            this._view = v;
+
+            var framesByID = {};
+            for (var frame in v) {
+                framesByID[v[frame]["id"]] = v[frame];
+            }
+
+            var frames = v
+                .map(function(frame) {
+                    return {
+                        id: frame["id"],
+                        label: frame["id"],
+                    }
+                });
+
+            var relations = frames.length == 0 ? [] : v
+                .map(function(frame) {
+                    return Array.from(frame["fillers"])
+                        .filter(r => r["type"].startsWith("relation"))
+                        .map(function(relation) {
+                            return {
+                                from: frame["id"],
+                                to: relation["filler"],
+                                label: relation["slot"],
+                                arrows: "to",
+                            }
+                        })
+                })
+                .reduce(function (f1, f2) {return f1.concat(f2)});
+
+            var nodes = new vis.DataSet(frames);
+            var edges = new vis.DataSet(relations);
+
+            var data = {
+                nodes: nodes,
+                edges: edges
+            };
+            var options = {
+                "physics": {
+                    "barnesHut": {
+                        "springLength": 300
+                    }
+                },
+                "layout": {
+                    "randomSeed": 3
+                }
+            };
+
+            console.log(data);
+
+            var network = new vis.Network(shadow.find("#ontoagent-view-container")[0], data, options);
+
+            network.on("selectNode", function(params) {
+                var frameId = framesByID[params["nodes"][0]]["id"];
+                self.dispatchEvent(new CustomEvent("frame-selected", {bubbles: true, composed: true, detail: {"frameId": frameId}}));
+            });
+
+            network.on("dragStart", function(params) {
+                if (params["nodes"][0] == undefined) {
+                    return;
+                }
+                var frameId = framesByID[params["nodes"][0]]["id"];
+                self.dispatchEvent(new CustomEvent("frame-selected", {bubbles: true, composed: true, detail: {"frameId": frameId}}));
+            });
+
+            this._network = network;
+        }
+    }
+
+    customElements.define("ontoagent-view", OntoAgentViewElement);
+</script>

@@ -1,0 +1,226 @@
+
+
+<template id="ontoagent-signal-element-template">
+
+    {% include 'includes/common-css.html' %}
+    {% include 'includes/common-js.html' %}
+
+    <style>
+        .signal-detail {
+            font-weight: bold;
+        }
+        #signal-status[data-status='RECEIVED'] {
+            color: grey;
+        }
+        #signal-status[data-status='CONSUMED'] {
+            color: black;
+        }
+        #signal-contents-as-view {
+            height: 100%;
+        }
+        #signal-contents-as-view > .signal-view-container {
+            height: 500px;
+            border-style: solid;
+            border-width: 1px;
+            border-color: rgba(0,0,0,.125);
+        }
+        #signal-contents-as-list > .signal-frame-container {
+            margin-bottom: 10px;
+        }
+        #signal-contents-as-list > .signal-frame-container:last-of-type {
+            margin-bottom: 0px;
+        }
+        #signal-toggles > label {
+            font-size: 0.5rem;
+        }
+    </style>
+
+    <div class="card">
+        <div class="card-header">
+            <span id="signal-anchor-id"></span>
+            <div class="float-right">
+                <div id="signal-toggles" class="btn-group btn-group-toggle" data-toggle="buttons">
+                    <label class="btn btn-sm btn-light">
+                        <input type="radio" name="options" id="signal-details-button" autocomplete="off"> <i class="fas fa-info-circle"></i>
+                    </label>
+                    <label class="btn btn-sm btn-light active">
+                        <input type="radio" name="options" id="signal-view-button" autocomplete="off" checked> <i class="fas fa-project-diagram"></i>
+                    </label>
+                    <label class="btn btn-sm btn-light">
+                        <input type="radio" name="options" id="signal-list-button" autocomplete="off"> <i class="fas fa-list-ul"></i>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div id="signal-anchor-details">
+                <table class="table table-sm table-borderless">
+                    <tbody>
+                        <tr>
+                            <td class="signal-detail">Status</td>
+                            <td id="signal-status"></td>
+                        </tr>
+                        <tr>
+                            <td class="signal-detail">Timestamp</td>
+                            <td id="signal-timestamp"></td>
+                        </tr>
+                        <tr>
+                            <td class="signal-detail">Root</td>
+                            <td id="signal-root"></td>
+                        </tr>
+                        <tr>
+                            <td class="signal-detail">Reports</td>
+                            <td id="signal-reports"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="signal-contents-as-view"></div>
+            <div id="signal-contents-as-list"></div>
+        </div>
+    </div>
+
+</template>
+
+
+<script>
+    let ontoAgentSignalElementTemplate = document.querySelector("#ontoagent-signal-element-template");
+
+    class OntoAgentSignalElement extends HTMLElement {
+        constructor(signal) {
+            super();
+
+            this.shadow = this.attachShadow({mode: 'open'});
+            this.shadow.appendChild(ontoAgentSignalElementTemplate.content.cloneNode(true));
+
+            var self = this;
+            var shadow = $(this.shadow);
+
+            if (signal) {
+                this.signal = signal;
+            }
+        }
+
+        set signal(s) {
+            var self = this;
+            this.setAttribute("signal-anchor-id", s["signal-anchor"]["anchor"]);
+
+            var shadow = $(this.shadow);
+
+            $(shadow.find("#signal-anchor-id")[0]).text(s["signal-anchor"]["anchor"]);
+
+            $(shadow.find("#signal-status")[0]).text(s["signal-anchor"]["status"]);
+            $(shadow.find("#signal-status")[0]).attr("data-status", s["signal-anchor"]["status"]);
+
+            var timestamp = new Date();
+            timestamp.setTime(s["signal-anchor"]["timestamp"] / 1000000);
+            $(shadow.find("#signal-timestamp")[0]).text(timestamp.toUTCString());
+
+            var root = $("<a href='#' class='signal-anchor-link' data-frame-id='" + s["signal-anchor"]["root"] + "'>" + s["signal-anchor"]["root"] + "</a>");
+            $(shadow.find("#signal-root")[0]).html(root);
+
+            var reports = $(
+                s["signal-anchor"]["reports"]
+                    .map(function(report) { return "<a href='#' class='signal-report-link' data-frame-id='" + report + "'>" + report + "</a>"; })
+                    .join(" , ")
+            );
+            if (s["signal-anchor"]["reports"].length == 0) {
+                reports = $("<span>No reports.</span>");
+            }
+            $(shadow.find("#signal-reports")[0]).html(reports);
+
+            this.renderSignalAsView(s, $(shadow.find("#signal-contents-as-view")[0]));
+            this.renderSignalAsFrames(s, $(shadow.find("#signal-contents-as-list")[0]));
+
+            $(shadow.find("#signal-anchor-details")[0]).hide();
+            $(shadow.find("#signal-contents-as-list")[0]).hide();
+
+            shadow.find("#signal-details-button").each(function(i, e) {
+                e.addEventListener("change", function(e) {
+                    shadow.find("#signal-anchor-details").show();
+                    shadow.find("#signal-contents-as-view").hide();
+                    shadow.find("#signal-contents-as-list").hide();
+
+                    shadow.find("#signal-details-button").parent().addClass("active");
+                    shadow.find("#signal-view-button").parent().removeClass("active");
+                    shadow.find("#signal-list-button").parent().removeClass("active");
+                });
+            });
+
+            shadow.find("#signal-view-button").each(function(i, e) {
+                e.addEventListener("change", function(e) {
+                    shadow.find("#signal-anchor-details").hide();
+                    shadow.find("#signal-contents-as-view").show();
+                    shadow.find("#signal-contents-as-list").hide();
+
+                    shadow.find("#signal-details-button").parent().removeClass("active");
+                    shadow.find("#signal-view-button").parent().addClass("active");
+                    shadow.find("#signal-list-button").parent().removeClass("active");
+                });
+            });
+
+            shadow.find("#signal-list-button").each(function(i, e) {
+                e.addEventListener("change", function(e) {
+                    shadow.find("#signal-anchor-details").hide();
+                    shadow.find("#signal-contents-as-view").hide();
+                    shadow.find("#signal-contents-as-list").show();
+
+                    shadow.find("#signal-details-button").parent().removeClass("active");
+                    shadow.find("#signal-view-button").parent().removeClass("active");
+                    shadow.find("#signal-list-button").parent().addClass("active");
+                });
+            });
+
+            shadow.find(".signal-anchor-link").each(function(i, e) {
+                e.addEventListener("click", function(e) {
+                    var frameId = $(e.target).data("frame-id");
+                    this.dispatchEvent(new CustomEvent("frame-selected", {bubbles: true, composed: true, detail: {"frameId": frameId}}));
+                    console.log(frameId + " selected.");
+                });
+            });
+
+            shadow.find(".signal-report-link").each(function(i, e) {
+                e.addEventListener("click", function(e) {
+                    var frameId = $(e.target).data("frame-id");
+                    this.dispatchEvent(new CustomEvent("report-selected", {bubbles: true, composed: true, detail: {"frameId": frameId}}));
+                    console.log(frameId + " selected.");
+                });
+            });
+        }
+
+        renderSignalAsView(signal, element) {
+            element.empty();
+
+            var viewElement = new OntoAgentViewElement(signal["signal-contents"]);
+            $(viewElement).on("frame-selected", function(e) {
+                var frameId = e.detail["frameId"];
+                console.log(frameId + " selected.");
+            });
+
+            var container = $("<div class='signal-view-container'></div>");
+            container.append(viewElement);
+
+            element.append(container);
+        }
+
+        renderSignalAsFrames(signal, element) {
+            element.empty();
+
+           for (var i in signal["signal-contents"]) {
+                var frame = signal["signal-contents"][i];
+                var frameElement = new OntoAgentFrameElement(frame);
+                $(frameElement).on("frame-selected", function(e) {
+                    var frameId = e.detail["frameId"];
+                    console.log(frameId + " selected.");
+                });
+
+                var container = $("<div class='signal-frame-container'></div>");
+                container.append(frameElement);
+
+                element.append(container);
+            }
+        }
+    }
+
+    customElements.define("ontoagent-signal", OntoAgentSignalElement);
+</script>

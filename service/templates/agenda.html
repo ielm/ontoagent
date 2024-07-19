@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>OntoAgent Agenda</title>
+
+    {% include 'includes/common-css.html' %}
+    {% include 'includes/common-js.html' %}
+    {% include 'includes/common-components.html' %}
+
+    <style>
+        .agenda-indented {
+            margin-left: 20px;
+        }
+        .goal-anchor {
+            font-weight: bold;
+        }
+        .goal-status {
+            font-size: small;
+        }
+        .goal-status[data-status='ACTIVE'] {
+            color: green;
+        }
+        .goal-status[data-status='ABANDONED'] {
+            color: orange;
+        }
+        .goal-status[data-status='SATISFIED'] {
+            color: black;
+        }
+        .goal-priority {
+            font-size: small;
+        }
+        .goal-highlighted {
+            color: deeppink;
+        }
+        .plan-anchor {
+
+        }
+        .plan-status {
+            font-size: small;
+        }
+        .plan-status[data-status='PENDING'] {
+            color: green;
+        }
+        .plan-status[data-status='FINISHED'] {
+            color: black;
+        }
+        .plan-cost {
+            font-size: small;
+        }
+        .step-status {
+            font-size: small;
+        }
+        .step-status[data-status='PLANNED'] {
+            color: grey;
+        }
+        .step-status[data-status='EXECUTING'] {
+            color: green;
+        }
+        .step-status[data-status='IMPASSED'] {
+            color: orange;
+        }
+        .step-status[data-status='DEFERRED'] {
+            color: blue;
+        }
+        .step-status[data-status='FINISHED'] {
+            color: black;
+        }
+        .step-details-icon {
+            color: grey;
+        }
+        .step-details-icon:hover {
+            color: black;
+        }
+        .step-details {
+            font-size: small;
+        }
+        .step-subgoal {
+            font-weight: bold;
+            cursor: default;
+        }
+        .step-subgoal:hover {
+            color: deeppink;
+        }
+        .agenda-demo-add-goal-variable-row {
+            font-size: smaller;
+        }
+        .agenda-demo-add-goal-variable {
+            vertical-align: middle;
+            vertical-align: -moz-middle-with-baseline;
+        }
+        .agenda-demo-add-goal-value {
+            font-size: smaller;
+        }
+        #add-goal-button {
+            font-size: smaller;
+            color: grey;
+        }
+        #add-goal-button:hover {
+            color: black;
+        }
+        .signal-effector-release-button {
+            font-size: xx-small;
+            padding-top: 1px;
+            padding-bottom: 1px;
+            padding-left: 2px;
+            padding-right: 3px;
+        }
+
+    </style>
+
+    <script>
+        function onHeartbeatPulsed(payload) {
+            renderAgenda(payload["agenda"]);
+        }
+
+        function renderAgenda(agenda) {
+            if (agenda.goals.length == 0) {
+                $("#empty-message").show();
+                $("#agenda").hide();
+            } else {
+                $("#empty-message").hide();
+                $("#agenda").show();
+            }
+
+            $("#agenda").empty();
+
+            for (var i in agenda.goals) {
+                var goal = agenda.goals[i];
+
+                var template = document.getElementById('agenda-goal-template').innerHTML;
+                Mustache.parse(template, ["{|", "|}"]);
+                var rendered = Mustache.render(template, goal);
+                $($(document).find("#agenda")[0]).append($(rendered));
+            }
+        }
+
+        function renderImpasseContents(impasse) {
+            $("#inspect-container").empty();
+
+            var impasseElement = new OntoAgentImpasseElement(impasse);
+            $("#inspect-container").append(impasseElement);
+        }
+
+        function renderSignalContents(signal) {
+            $("#inspect-container").empty();
+
+            var signalElement = new OntoAgentSignalElement(signal);
+            $("#inspect-container").append(signalElement);
+        }
+
+        function renderDemoAddGoal(definitions, steps) {
+            $("#inspect-container").empty();
+
+            var params = {
+                "definitions": definitions,
+                "steps": steps
+            };
+
+            var template = document.getElementById('agenda-demo-add-goal-template').innerHTML;
+            Mustache.parse(template, ["{|", "|}"]);
+            var rendered = Mustache.render(template, params);
+            $("#inspect-container").append($(rendered));
+        }
+
+        function renderDefinitionVariables(variables) {
+            $("#demo-add-goal-parameters-table").empty();
+            for (var i in variables) {
+                var variable = variables[i];
+
+                var row = $("<tr class='agenda-demo-add-goal-variable-row'></tr>");
+                var col1 = $("<td><span class='agenda-demo-add-goal-variable'>" + variable + "</span></td>");
+                var col2 = $("<td><input class='agenda-demo-add-goal-value form-control' type='text'></input></td>");
+
+                row.append(col1);
+                row.append(col2);
+
+                $("#demo-add-goal-parameters-table").append(row);
+            }
+        }
+    </script>
+
+    <script>
+        var goalDefinitions = [];
+
+        $(document).ready(function() {
+            var payload = JSON.parse({{payload|tojson}});
+            renderAgenda(payload["agenda"]);
+
+            goalDefinitions = payload["goal-definitions"];
+
+            $(document).on("click", ".step-details-icon", function(e) {
+                var id = $(e.currentTarget).data("step");
+                var ul = $("ul[data-step='" + id +"']");
+                ul.toggle();
+
+                if ($(e.currentTarget).hasClass("fa-caret-right")) {
+                    $(e.currentTarget).removeClass("fa-caret-right");
+                    $(e.currentTarget).addClass("fa-caret-down");
+                } else {
+                    $(e.currentTarget).addClass("fa-caret-right");
+                    $(e.currentTarget).removeClass("fa-caret-down");
+                }
+            });
+
+            $(document).on("mouseover", ".step-subgoal", function(e) {
+                var id = $(e.currentTarget).data("goal");
+                var goal = $(".goal[data-goal='" + id + "'] > div > span.goal-anchor");
+                goal.addClass("goal-highlighted");
+            });
+
+            $(document).on("mouseout", ".step-subgoal", function(e) {
+                var id = $(e.currentTarget).data("goal");
+                var goal = $(".goal[data-goal='" + id + "'] > div > span.goal-anchor");
+                goal.removeClass("goal-highlighted");
+            });
+
+            $(document).on("click", ".step-impasse", function(e) {
+                var id = $(e.currentTarget).data("impasse");
+                apiGetImpasse(id, function(response) {
+                    renderImpasseContents(response);
+                });
+            });
+
+            $(document).on("click", ".step-xmr", function(e) {
+                var id = $(e.currentTarget).data("xmr");
+                apiGetSignal(id, function(response) {
+                    renderSignalContents(response);
+                });
+            });
+
+            $(document).on("change", "#input-group-select-goal", function(e) {
+                var id = this.value;
+                if (!id.startsWith("@")) { return; }
+
+                apiGetFrame(id, function(frame) {
+                    var variables = frame["fillers"]
+                        .filter(filler => filler["slot"] == "HAS-VARIABLE")
+                        .map(filler => filler["filler"]);
+                    renderDefinitionVariables(variables);
+                });
+            });
+
+            $(document).on("click", "#demo-add-goal-button", function(e) {
+                var definition = $("#input-group-select-goal").val();
+                var variables = {};
+                $(".agenda-demo-add-goal-variable-row").each(function(i, e) {
+                    var variable = $($(e).find(".agenda-demo-add-goal-variable")[0]).text();
+                    var value = $($(e).find(".agenda-demo-add-goal-value")[0]).val()
+                    variables[variable] = value;
+                });
+                var subgoal_of = [];
+                if ($("#input-group-select-subgoal-of").val() != "None") {
+                    subgoal_of = [$("#input-group-select-subgoal-of").val()];
+                }
+
+                demoAgendaAddGoal(definition, variables, subgoal_of, function(data) {
+                    $("#inspect-container").empty();
+                });
+            });
+
+            $(document).on("click", "#add-goal-button", function(e) {
+                var steps = $('div.step').map(function() {
+                    return $(this).data('step');
+                }).get();
+                renderDemoAddGoal(goalDefinitions, steps);
+            });
+
+            $(document).on("click", ".signal-effector-release-button", function(e) {
+                var effectorId = $(e.currentTarget).data("effector");
+                apiReleaseEffector(effectorId, function(response) {
+                    console.log("Effector released.");
+                });
+            });
+
+        });
+    </script>
+
+    <script id="agenda-goal-template" type="x-tmpl-mustache">
+        <div class="goal" data-goal="{| anchor |}">
+            <div>
+                <span class="goal-anchor">{| anchor |}</span>
+                <span class="goal-status" data-status="{| status |}">{| status |}</span>
+                <span class="goal-priority">p={| priority |}</span>
+            </div>
+            {| #plans |}
+                <div class="plan agenda-indented" data-plan="{| anchor |}">
+                    <div>
+                        <span class="plan-anchor">{| anchor |}</span>
+                        <span class="plan-status" data-status="{| status |}">{| status |}</span>
+                        <span class="plan-cost">c={| cost |}</span>
+                    </div>
+                    <ol>
+                        {| #steps |}
+                            <li>
+                                <div class="step" data-step="{| anchor |}">
+                                    <div>
+                                        <span class="step-anchor">{| anchor |}</span>
+                                        <span class="step-status" data-status="{| status |}">{| status |}</span>
+                                        <i class="step-details-icon fas fa-caret-down frame-icon" data-step="{| anchor |}"></i>
+                                    </div>
+                                    <ul class="step-details" data-step="{| anchor |}">
+                                        {| #impasses.0 |}
+                                            <li>
+                                                Impasses:
+                                                {| #impasses |}
+                                                    <a href="#" class="step-impasse" data-impasse="{| . |}">{| . |}</a>
+                                                {| /impasses |}
+                                            </li>
+                                        {| /impasses.0 |}
+                                        {| #subgoals.0 |}
+                                        <li>
+                                            Subgoals:
+                                            {| #subgoals |}
+                                                <span class="step-subgoal" data-goal="{| . |}">{| . |}</span>
+                                            {| /subgoals |}
+                                        </li>
+                                        {| /subgoals.0 |}
+                                        {| #xmr |}
+                                            XMR:
+                                            <a href="#" class="step-xmr" data-xmr="{| . |}">{| . |}</a>
+                                        {| /xmr |}
+                                        {| #effector |}
+                                            Effector:
+                                            <a href="#" class="step-effector" data-effector="{| . |}">{| . |}</a>
+                                            <button type="button" class="signal-effector-release-button btn btn-info btn-sm" data-effector="{| . |}"><i class="fas fa-redo-alt"></i></button>
+                                        {| /effector |}
+                                    </ul>
+                                </div>
+                            </li>
+                        {| /steps |}
+                    </ol>
+                </div>
+            {| /plans |}
+        </div>
+    </script>
+
+    <script id="agenda-demo-add-goal-template" type="x-tmpl-mustache">
+        <div>
+            <div class="card" style="margin-bottom: 25px;">
+                <div class="card-header">
+                    Add Goal
+                </div>
+                <div class="card-body">
+                    <div class="input-group mb-3 input-group-sm">
+                        <div class="input-group-prepend">
+                            <label class="input-group-text" for="input-group-select-goal">Goals</label>
+                        </div>
+                        <select id="input-group-select-goal" class="custom-select">
+                            <option selected>Choose...</option>
+                            {| #definitions |}
+                                <option value="{| . |}">{| . |}</option>
+                            {| /definitions |}
+                        </select>
+                    </div>
+                    <div class="input-group mb-3 input-group-sm">
+                        <div class="input-group-prepend">
+                            <label class="input-group-text" for="input-group-select-subgoal-of">Subgoal Of</label>
+                        </div>
+                        <select id="input-group-select-subgoal-of" class="custom-select">
+                            <option selected>None</option>
+                            {| #steps |}
+                                <option value="{| . |}">{| . |}</option>
+                            {| /steps |}
+                        </select>
+                    </div>
+                    <table id="demo-add-goal-parameters-table" class="table table-sm"></table>
+                    <button id="demo-add-goal-button" type="button" class="btn btn-success btn-sm">Add</button>
+                </div>
+            </div>
+        </div>
+    </script>
+
+</head>
+<body>
+
+    {% include 'includes/nav.html' %}
+    <script>
+        $(document).ready(function() {
+            $("#nav-agenda").addClass("active");
+        });
+    </script>
+
+    <div class="container">
+        <div class="row" style="margin-top: 25px;">
+            <div class="col-sm-6">
+                <div class="card" style="margin-bottom: 25px;">
+                    <div class="card-header">
+                        Agenda
+                        <div class="float-right">
+                            <i id="add-goal-button" class="fas fa-plus-circle"></i>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="empty-message" style="display: none;">
+                            The agenda is empty.
+                        </div>
+                        <div id="agenda">
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="inspect-container" class="col-sm-6"></div>
+        </div>
+    </div>
+
+</body>
+</html>

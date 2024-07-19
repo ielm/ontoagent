@@ -1,0 +1,8 @@
+--extra-index-url https://pypi.trulysmartagents.org/
+
+OntoGraph==0.17.2
+pymongo==3.7.2
+Flask-Cors==3.0.3
+Flask-Socketio==3.2.1
+requests==2.18.4
+psycopg2-binary==2.8.3

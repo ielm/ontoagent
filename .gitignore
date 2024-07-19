@@ -1,0 +1,8 @@
+.idea*
+.virtualenvs*
+*~
+*.pyc
+.DS_Store
+dist*
+OntoAgent.egg-info*
+build*

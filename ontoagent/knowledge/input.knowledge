@@ -1,0 +1,11 @@
+
+#HandlingInputSpeech
+
+@ONT.SPEECH-ACT += {
+    HAS-OPERATION   @SYS.OPERATION.1?;
+};
+
+@SYS.OPERATION.1? = {
+    IS-A        @ONT.OPERATION;
+    EXECUTABLE  *ontoagent.knowledge.operations.input.HandleInputSpeechExecutable;
+};

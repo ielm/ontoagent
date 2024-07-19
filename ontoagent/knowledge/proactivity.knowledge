@@ -1,0 +1,30 @@
+@ONT.PROACTIVITY            = { IS-A @ONT.SYSTEM-OBJECT; };
+
+// Use @EXE.PROACTIVITY.1 as a buffer to place proactivity operations that the agent should have by default.
+// We do this because the agent's actual proactivity frame's ID cannot be known; so we rely on the agent
+// to reference this frame, and copy its contents into the actual proactivity frame.
+@EXE.PROACTIVITY.1          = { IS-A @ONT.PROACTIVITY; };
+
+
+#UpdateEvergreenGoals
+
+@EXE.PROACTIVITY.1 += {
+    HAS-OPERATION   @SYS.OPERATION.1?;
+};
+
+@SYS.OPERATION.1? = {
+    IS-A            @ONT.OPERATION;
+    EXECUTABLE      *ontoagent.knowledge.operations.proactivity.UpdateEvergreenGoalsProactiveExecutable;
+};
+
+
+#ProcessAgenda
+
+@EXE.PROACTIVITY.1 += {
+    HAS-OPERATION   @SYS.OPERATION.1?;
+};
+
+@SYS.OPERATION.1? = {
+    IS-A            @ONT.OPERATION;
+    EXECUTABLE      *ontoagent.knowledge.operations.agenda.ProcessAgendaExecutable;
+};

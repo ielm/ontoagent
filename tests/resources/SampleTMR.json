@@ -1,0 +1,304 @@
+{
+    "sentence": "Give me the dowel.",
+    "tmr": [
+      {
+        "sentence": "Give me the dowel.",
+        "sent-num": 1,
+        "results": [
+          {
+            "words": {
+              "0": [
+                "GIVE",
+                "GIVE-V800"
+              ],
+              "3": [
+                "DOWEL",
+                "DOWEL-N800"
+              ],
+              "4": [
+                ".",
+                ".-PUNCT1"
+              ]
+            },
+            "concept_counts": {
+              "REQUEST-ACTION": {
+                "count": 1,
+                "word-info": [
+                  [
+                    0,
+                    "top"
+                  ]
+                ]
+              },
+              "GIVE": {
+                "count": 1,
+                "word-info": [
+                  [
+                    1001,
+                    "top"
+                  ]
+                ]
+              },
+              "DOWEL": {
+                "count": 1,
+                "word-info": [
+                  [
+                    3,
+                    "top"
+                  ]
+                ]
+              }
+            },
+            "TMR": {
+              "REQUEST-ACTION-1": {
+                "from-sense": "GIVE-V800",
+                "concept": "REQUEST-ACTION",
+                "sent-word-ind": [
+                  1,
+                  [
+                    0
+                  ]
+                ],
+                "token": "Give",
+                "AGENT": "HUMAN",
+                "BENEFICIARY": "ROBOT",
+                "THEME": "GIVE-1",
+                "TMR-ROOT": true,
+                "TIME": [
+                  "FIND-ANCHOR-TIME"
+                ],
+                "is-in-subtree": "EVENT",
+                "preference": 5,
+                "sem-preference": 0
+              },
+              "GIVE-1": {
+                "from-sense": "GIVE-V800",
+                "concept": "GIVE",
+                "sent-word-ind": [
+                  1,
+                  [
+                    0
+                  ]
+                ],
+                "token": "Give",
+                "from-refsem": "REFSEM1",
+                "BENEFICIARY": "HUMAN",
+                "THEME-OF": "REQUEST-ACTION-1",
+                "sem-preference": -10,
+                "AGENT": "ROBOT",
+                "THEME": "DOWEL-1"
+              },
+              "DOWEL-1": {
+                "from-sense": "DOWEL-N800",
+                "concept": "DOWEL",
+                "sent-word-ind": [
+                  1,
+                  [
+                    3
+                  ]
+                ],
+                "token": "dowel",
+                "MADE-OF": "WOOD",
+                "SHAPE": "CYLINDRICAL",
+                "preference": 3,
+                "sem-preference": 0,
+                "THEME-OF": "GIVE-1",
+                "GROUNDING-MP": "ground_to_most_recently_used"
+              },
+              "syntactic-score": 8,
+              "semantic-score": -10,
+              "baseline-semantic-score": 1,
+              "combined-score": -2
+            }
+          }
+        ],
+        "timestamp": "2019-Apr-26 17:09:00",
+        "candidatesBeforePrunning": 1,
+        "OriginalSentence": "Give me the dowel."
+      }
+    ],
+    "syntax": [
+      {
+        "0": {
+          "coref": [],
+          "lemma": "GIVE",
+          "ner": "O",
+          "offset": [
+            0,
+            4
+          ],
+          "pos": [
+            "V",
+            "INFINITIVE"
+          ],
+          "token": "Give"
+        },
+        "1": {
+          "coref": [],
+          "lemma": "I",
+          "ner": "O",
+          "offset": [
+            5,
+            7
+          ],
+          "pos": [
+            "PRO"
+          ],
+          "token": "me"
+        },
+        "2": {
+          "coref": [],
+          "lemma": "THE",
+          "ner": "O",
+          "offset": [
+            8,
+            11
+          ],
+          "pos": [
+            "ART"
+          ],
+          "token": "the"
+        },
+        "3": {
+          "coref": [],
+          "lemma": "DOWEL",
+          "ner": "O",
+          "offset": [
+            12,
+            17
+          ],
+          "pos": [
+            "N",
+            "SINGULAR"
+          ],
+          "token": "dowel"
+        },
+        "4": {
+          "coref": [],
+          "lemma": ".",
+          "ner": "O",
+          "offset": [
+            17,
+            18
+          ],
+          "pos": [
+            "."
+          ],
+          "token": "."
+        },
+        "basicDeps": [
+          [
+            "ROOT",
+            -1,
+            0
+          ],
+          [
+            "INDIRECTOBJECT",
+            0,
+            1
+          ],
+          [
+            "DIRECTOBJECT",
+            0,
+            3
+          ],
+          [
+            "ART",
+            3,
+            2
+          ]
+        ],
+        "originalSentence": "Give me the dowel.",
+        "parse": "(ROOT (S (VP (V GIVE-0) (NP (PRO I-1)) (NP (ART THE-2) (N DOWEL-3))) (. .-4)))",
+        "sentence": "Give me the dowel.",
+        "syn-map": [
+          [
+            [
+              "GIVE-V800",
+              {
+                "$VAR2": [
+                  1,
+                  1,
+                  1
+                ],
+                "$VAR1": [
+                  3,
+                  2,
+                  3
+                ],
+                "$VAR0": [
+                  0
+                ],
+                "preference": 5
+              }
+            ]
+          ],
+          [
+            [
+              "I-N1",
+              {
+                "$VAR0": [
+                  1
+                ],
+                "preference": 0
+              }
+            ]
+          ],
+          [
+            [
+              "THE-ART1",
+              {
+                "$VAR2": null,
+                "$VAR1": [
+                  3,
+                  3,
+                  3
+                ],
+                "$VAR0": [
+                  2
+                ],
+                "preference": 3
+              }
+            ],
+            [
+              "THE-ART2",
+              {
+                "$VAR1": [
+                  3,
+                  3,
+                  3
+                ],
+                "$VAR0": [
+                  2
+                ],
+                "preference": 3
+              }
+            ]
+          ],
+          [
+            [
+              "DOWEL-N800",
+              {
+                "$VAR0": [
+                  3
+                ],
+                "preference": 3
+              }
+            ]
+          ],
+          [
+            [
+              ".-PUNCT1",
+              {
+                "$VAR0": [
+                  4
+                ],
+                "preference": 0
+              }
+            ]
+          ]
+        ],
+        "syn-map_generator": "CSynmap"
+      }
+    ]
+  }

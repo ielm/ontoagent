@@ -1,0 +1,42 @@
+@ONT.AGENDA-OBJECT  = { IS-A @ONT.MENTAL-OBJECT; };
+@ONT.IMPASSE        = { IS-A @ONT.AGENDA-OBJECT; };
+@ONT.RESOLUTION     = { IS-A @ONT.AGENDA-OBJECT; };
+
+@ONT.EVERGREEN-GOALS    = { IS-A @ONT.MENTAL-OBJECT; };
+@ONT.LT-GOAL            = { IS-A @ONT.MENTAL-OBJECT; };
+@ONT.OBSERVABLE-VALUE   = { IS-A @ONT.MENTAL-OBJECT; };
+
+@ONT.GOAL += {
+	IS-INSTANTIABLE	"HAS-PLAN";
+};
+
+@ONT.EVENT += {
+    IS-INSTANTIABLE	"HAS-IMPASSE";
+};
+
+@ONT.IMPASSE += {
+    IS-INSTANTIABLE "HAS-RESOLUTION";
+};
+
+#AddingAGoal
+
+@ONT.ADD-GOAL-INSTANCE = {
+    IS-A            @ONT.MENTAL-EVENT;
+    HAS-OPERATION   @SYS.OPERATION.1?;
+    THEME           @ONT.GOAL.1?;
+    HAS-VARIABLE    @SYS.VARIABLE.1?;
+};
+
+@SYS.OPERATION.1? = {
+    IS-A        @ONT.OPERATION;
+    EXECUTABLE  *ontoagent.knowledge.operations.agenda.AddGoalInstanceExecutable;
+};
+
+@SYS.VARIABLE.1? = {
+    IS-A        @ONT.VARIABLE;
+    VALUE       @ONT.GOAL.1?;
+};
+
+@ONT.GOAL.1? = {
+    IS-A        @ONT.GOAL;
+};

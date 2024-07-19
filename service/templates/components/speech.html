@@ -1,0 +1,124 @@
+
+
+
+<template id="ontoagent-signal-speech-modal-template">
+
+    {% include 'includes/common-css.html' %}
+    {% include 'includes/common-js.html' %}
+
+    <style>
+
+    </style>
+
+    <div class="modal fade" id="signal-speech-modal" tabindex="-1" role="dialog" aria-labelledby="signal-speech-modal-label" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="signal-speech-modal-label">Signal Speech</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" id="signal-speech-text">
+                                <i class='fas fa-quote-left'></i>
+                            </span>
+                        </div>
+                        <input id="signal-speech-text-input" type="text" class="form-control" placeholder="Speech" aria-label="Speech" aria-describedby="signal-speech-text">
+                    </div>
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" id="signal-speech-speaker">
+                                <i class="fas fa-user-circle"></i>
+                            </span>
+                        </div>
+                        <input id="signal-speech-speaker-input" type="text" class="form-control" placeholder="@ENV.HUMAN.1" aria-label="@ENV.HUMAN.1" aria-describedby="signal-speech-speaker">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="cancel-button" type="button" class="btn btn-secondary">Cancel</button>
+                    <button id="signal-speech-button" type="button" class="btn btn-primary" disabled>Signal</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</template>
+
+<script>
+    let ontoAgentSignalSpeechModalTemplate = document.querySelector("#ontoagent-signal-speech-modal-template");
+
+    class OntoAgentSignalSpeechModal extends HTMLElement {
+
+        constructor(view) {
+            super();
+
+            var self = this;
+
+            this.shadow = this.attachShadow({mode: 'open'});
+            this.shadow.appendChild(ontoAgentSignalSpeechModalTemplate.content.cloneNode(true));
+
+            if (view) {
+                this.view = view;
+            }
+
+            var signalSpeechButton = $(this.shadow).find("#signal-speech-button")[0];
+            var cancelButton = $(this.shadow).find("#cancel-button")[0];
+            var inputSpeech = $(this.shadow).find("#signal-speech-text-input")[0];
+            var speakerSpeech = $(this.shadow).find("#signal-speech-speaker-input")[0];
+
+            signalSpeechButton.addEventListener("click", function(e) {
+                var input = $(inputSpeech).val();
+                var speaker = $(speakerSpeech).val();
+
+                if (speaker == "") {
+                    speaker = {};
+                }
+
+                apiSignalSpeech(input, speaker, function(output) {
+                    self.hide();
+                });
+            });
+
+            cancelButton.addEventListener("click", function(e) {
+                self.hide();
+            });
+
+            inputSpeech.addEventListener("keyup", function(e) {
+                var input = $(e.target).val();
+
+                if (input == "") {
+                    $(signalSpeechButton).attr("disabled", true);
+                } else {
+                    $(signalSpeechButton).attr("disabled", false);
+                }
+            });
+
+        }
+
+        show() {
+            var self = this;
+            var shadow = $(this.shadow);
+
+            var modal = $(shadow.find("#signal-speech-modal")[0]);
+            self.modal = modal;
+
+            try {
+                modal.modal();
+            } catch (err) {
+                console.log(err);
+            }
+        }
+
+        hide() {
+            var self = this;
+            self.modal.modal("hide");
+            self.remove();
+        }
+
+    }
+
+    customElements.define("ontoagent-signal-speech", OntoAgentSignalSpeechModal);
+</script>

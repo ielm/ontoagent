@@ -1,0 +1,2 @@
+recursive-include ontoagent/ *.knowledge
+recursive-include ontoagent/ *.lark

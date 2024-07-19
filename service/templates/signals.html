@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>OntoAgent Signals</title>
+
+    {% include 'includes/common-css.html' %}
+    {% include 'includes/common-js.html' %}
+    {% include 'includes/common-components.html' %}
+
+    <style>
+        #empty-message {
+            font-style: italic;
+        }
+        .received-signal-details {
+            font-size: small;
+            color: gray;
+        }
+        .received-signal-status-RECEIVED {
+            color: darkblue;
+        }
+        .received-signal-status-CONSUMED {
+            color: gray;
+        }
+        #signal-type-select {
+            font-size: x-small;
+        }
+        .inspect-content {
+            margin-bottom: 25px;
+        }
+    </style>
+
+    <script>
+
+        function onHeartbeatPulsed(payload) {
+            renderSignals(payload["signals"]);
+        }
+
+        function renderSignals(signals) {
+            if (signals.length == 0) {
+                $("#empty-message").show();
+                $("#signals").hide();
+            } else {
+                $("#empty-message").hide();
+                $("#signals").show();
+            }
+
+            $("#signals").empty();
+
+            for (var i in signals) {
+                var signal = signals[i];
+
+                var timestamp = new Date();
+                timestamp.setTime(signal["timestamp"] / 1000000);
+                signal["timestamp"] = timestamp.toUTCString();
+
+                if (signal["with_effector"] == null) {
+                    delete signal["with_effector"];
+                }
+
+                var template = document.getElementById('receieved-signal-template').innerHTML;
+                Mustache.parse(template, ["{|", "|}"]);
+                var rendered = Mustache.render(template, signal);
+                $($(document).find("#signals")[0]).append($(rendered));
+            }
+        }
+
+        function renderSignalContents(signal) {
+            $("#inspect-container").empty();
+
+            var signalElement = new OntoAgentSignalElement(signal);
+            $(signalElement).on("report-selected", function(e) {
+                var frameId = e.detail["frameId"];
+                apiGetReport(frameId, function(response) {
+                    renderReportContents(response);
+                });
+            });
+
+            var inspectContent = $("<div class='inspect-content'></div>");
+            inspectContent.append(signalElement);
+
+            $("#inspect-container").append(inspectContent);
+        }
+
+        function renderReportContents(report) {
+            var reportElement = new OntoAgentReportElement(report);
+
+            var inspectContent = $("<div class='inspect-content'></div>");
+            inspectContent.append(reportElement);
+
+            $("#inspect-container").append(inspectContent);
+        }
+
+    </script>
+
+    <script>
+        $(document).ready(function() {
+            var payload = JSON.parse({{payload|tojson}});
+            renderSignals(payload["signals"]);
+
+            $("#signal-type-select").val("CONSUMED");
+
+            $(document).on("click", ".received-signal-button", function(e) {
+                var id = $(e.currentTarget).data("signal");
+                apiGetSignal(id, function(response) {
+                    renderSignalContents(response);
+                });
+            });
+
+            $("#signal-type-select").on("change", function(e) {
+                var status = $("#signal-type-select").val();
+                apiGetSignals(status, function(response) {
+                    renderSignals(response);
+                });
+            });
+        });
+
+    </script>
+
+    <script id="receieved-signal-template" type="x-tmpl-mustache">
+        <button type="button" class="received-signal-button list-group-item list-group-item-action" data-signal="{| anchor |}">
+            <span class="received-signal-anchor">{| anchor |}</span>
+            <i class="fas fa-arrow-right"></i>
+            <span class="received-signal-root">{| root |}</span>
+            <div class="received-signal-details">
+                <span class="received-signal-status received-signal-status-{| status |}">{| status |}</span>
+                on
+                <span class="received-signal-timestamp">{| timestamp |}</span>
+                {| #with_effector |}
+                    <br>
+                    With Effector: {| with_effector |}
+                {| /with_effector |}
+            </div>
+        </button>
+    </script>
+
+</head>
+<body>
+
+    {% include 'includes/nav.html' %}
+    <script>
+        $(document).ready(function() {
+            $("#nav-signal").addClass("active");
+        });
+    </script>
+
+    <div class="container">
+        <div class="row" style="margin-top: 25px;">
+            <div class="col-sm-6">
+                <div class="card" style="margin-bottom: 25px;">
+                    <div class="card-header">
+                        Signals
+                        <div class="float-right">
+                            <div class="input-group input-group-sm">
+                                <select class="custom-select" id="signal-type-select">
+                                    <option value="RECEIVED" selected>RECEIVED</option>
+                                    <option value="CONSUMED">CONSUMED</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="empty-message" style="display: none;">
+                            There are no signals.
+                        </div>
+                        <ul id="signals" class="list-group" style="display: none;"></ul>
+                    </div>
+                </div>
+            </div>
+            <div id="inspect-container" class="col-sm-6"></div>
+        </div>
+    </div>
+
+</body>
+</html>

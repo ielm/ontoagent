@@ -1,0 +1,120 @@
+// Knowledge modifications
+
+@ONT.HAND           = { IS-A @ONT.PHYSICAL-OBJECT; };
+@ONT.WHEEL          = { IS-A @ONT.PHYSICAL-OBJECT; };
+@ONT.SCREWDRIVER    = { IS-A @ONT.PHYSICAL-OBJECT; };
+
+// Agent construction
+
+@SELF.EFFECTOR.1    = {
+    IS-A @ONT.HAND;
+    EXECUTABLE *tests.knowledge.operations.AgendaOperationsTestCase.HoldExecutable;
+};
+@SELF.EFFECTOR.2    = {
+    IS-A    @ONT.WHEEL;
+    EXECUTABLE *tests.knowledge.operations.AgendaOperationsTestCase.MoveExecutable;
+};
+
+@SELF.AGENT.1       += {
+    HAS-EFFECTOR    @SELF.EFFECTOR.1;
+    HAS-EFFECTOR    @SELF.EFFECTOR.2;
+};
+
+// Environment setup
+
+@ENV.SCREWDRIVER.5  = {
+    INSTANCE-OF             @ONT.SCREWDRIVER;
+    TEST-DISTANCE-TO-AGENT  10;
+};
+
+// Goals and plans
+
+#TakeObjectGoal
+
+@GOALS.TAKE-OBJECT  = {
+    IS-A            @ONT.GOAL;
+    HAS-PLAN        @ONT.HOLD;
+    HAS-VARIABLE    @ONT.PHYSICAL-OBJECT.1?;
+    HAS-BINDING     @SYS.BINDING.1?;
+};
+
+@ONT.PHYSICAL-OBJECT.1? = { IS-A @ONT.PHYSICAL-OBJECT; };
+
+@SYS.BINDING.1?     = {
+    INSTANCE-OF     @ONT.BINDING;
+    RANGE           @ONT.HOLD;
+    BIND-LOCAL      @ONT.PHYSICAL-OBJECT.1?;
+    BIND-TO         @HoldPlan:ONT.PHYSICAL-OBJECT.1?;
+};
+
+#HoldPlan
+
+@ONT.HOLD           = {
+    IS-A            @ONT.PHYSICAL-EVENT;
+    HAS-OPERATION   @SYS.OPERATION.1?;
+    HAS-IMPASSE     @SYS.IMPASSE.1?;
+    THEME           @ONT.PHYSICAL-OBJECT.1?;
+};
+
+@SYS.OPERATION.1?   = {
+    IS-A                @ONT.OPERATION;
+    EXECUTE             *tests.knowledge.operations.AgendaOperationsTestCase.HoldExecutable;
+    REQUIRES-EFFECTOR   @SELF.EFFECTOR.1;
+};
+
+@ONT.PHYSICAL-OBJECT.1? = { IS-A @ONT.PHYSICAL-OBJECT; };
+
+@SYS.IMPASSE.1?     = {
+    INSTANCE-OF     @ONT.IMPASSE;
+    HAS-RESOLUTION  @SYS.RESOLUTION.1?;
+    DETECT          *tests.knowledge.operations.AgendaOperationsTestCase.TooFarAwayImpasseDetectionExecutable;
+};
+
+@SYS.RESOLUTION.1?  = {
+    INSTANCE-OF     @ONT.RESOLUTION;
+    HAS-GOAL        @GOALS.APPROACH-OBJECT;
+    HAS-BINDING     @SYS.BINDING.1?;
+};
+
+@SYS.BINDING.1?     = {
+    INSTANCE-OF     @ONT.BINDING;
+    RANGE           @GOALS.APPROACH-OBJECT;
+    BIND-LOCAL      @ONT.PHYSICAL-OBJECT.1?;
+    BIND-TO         @ApproachObjectGoal:ONT.PHYSICAL-OBJECT.1?;
+};
+
+#ApproachObjectGoal
+
+@GOALS.APPROACH-OBJECT  = {
+    IS-A            @ONT.GOAL;
+    HAS-PLAN        @ONT.MOVE;
+    HAS-VARIABLE    @ONT.PHYSICAL-OBJECT.1?;
+    HAS-BINDING     @SYS.BINDING.1?;
+};
+
+@ONT.PHYSICAL-OBJECT.1? = { IS-A @ONT.PHYSICAL-OBJECT; };
+
+@SYS.BINDING.1?     = {
+    INSTANCE-OF     @ONT.BINDING;
+    RANGE           @ONT.MOVE;
+    BIND-LOCAL      @ONT.PHYSICAL-OBJECT.1?;
+    BIND-TO         @MovePlan:ONT.PHYSICAL-OBJECT.1?;
+};
+
+#MovePlan
+
+@ONT.MOVE           = {
+    IS-A            @ONT.PHYSICAL-EVENT;
+    HAS-OPERATION   @SYS.OPERATION.1?;
+    DESTINATION     @ONT.PHYSICAL-OBJECT.1?;
+};
+
+@SYS.OPERATION.1?   = {
+    IS-A                @ONT.OPERATION;
+    EXECUTE             *tests.knowledge.operations.AgendaOperationsTestCase.MoveExecutable;
+    REQUIRES-EFFECTOR   @SELF.EFFECTOR.2;
+};
+
+@ONT.PHYSICAL-OBJECT.1? = { IS-A @ONT.PHYSICAL-OBJECT; };
+
+

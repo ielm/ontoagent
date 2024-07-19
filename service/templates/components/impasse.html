@@ -1,0 +1,166 @@
+<!--
+Component for rendering an impasse.
+
+Initialize in either of the following ways:
+
+    var impasseElement = new OntoAgentImpasseElement(impasse);
+    someContainer.append(impasseElement);
+
+    -or-
+
+    var impasseElement = $("<ontoagent-impasse></ontoagent-impasse>")[0];
+    impasseElement.impasse = impasse;
+    someContainer.append(impasseElement);
+
+The impasse input must be of the following format:
+
+{
+    anchor: "@TEST.FRAME.1",
+    detect-module: "some.module.path",
+    detect-class: "SomeClassName",
+    source: "--python source code; any number of lines--",
+    resolutions: [
+        {
+            anchor: "@TEST.FRAME.2",
+            goal: "@TEST.FRAME.3"
+        },
+        ...
+    ]
+}
+-->
+
+
+<template id="ontoagent-impasse-element-template">
+
+    {% include 'includes/common-css.html' %}
+    {% include 'includes/common-js.html' %}
+
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.9/styles/default.min.css">
+
+    <style>
+        hr {
+            margin: 0px;
+        }
+        .details-header {
+            font-weight: bold;
+        }
+        #detect-container {
+            margin-bottom: 15px;
+        }
+        #impasse-source-expand {
+            color: black;
+        }
+        #impasse-source-expand:hover {
+            color: grey;
+        }
+        #impasse-detection-module {
+            font-size: small;
+            color: gray;
+        }
+        .resolution-anchor {
+            font-size: small;
+            color: gray;
+        }
+    </style>
+
+    <div class="card">
+        <div class="card-header">
+            <span class="impasse-id"></span>
+        </div>
+        <div class="card-body">
+            <div id="detect-container">
+                <span class="details-header">Detect</span>
+                <hr>
+                <div>
+                    <span id="impasse-detection-module"></span>
+                    <span id="impasse-detection-class"></span>
+                    <i id="impasse-source-expand" class="fas fa-caret-right"></i>
+                </div>
+                <div id="impasse-source-container">
+                    <pre><code id="impasse-source" class="python"></code></pre>
+                </div>
+            </div>
+            <div>
+                <span class="details-header">Resolutions</span>
+                <hr>
+                <div id="impasse-resolutions"></div>
+            </div>
+        </div>
+    </div>
+
+</template>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.9/highlight.min.js"></script>
+
+<script>
+    let ontoAgentImpasseElementTemplate = document.querySelector("#ontoagent-impasse-element-template");
+
+    class OntoAgentImpasseElement extends HTMLElement {
+        constructor(impasse) {
+            super();
+
+            this.shadow = this.attachShadow({mode: 'open'});
+            this.shadow.appendChild(ontoAgentImpasseElementTemplate.content.cloneNode(true));
+
+            var self = this;
+            var shadow = $(this.shadow);
+
+            shadow.find("#impasse-source-container").toggle();
+
+            if (impasse) {
+                this.impasse = impasse;
+            }
+        }
+
+        set impasse(i) {
+            var self = this;
+            this.setAttribute("impasse-anchor-id", i["anchor"]);
+
+            var shadow = $(this.shadow);
+
+            var impasseId = $(shadow.find(".card .card-header .impasse-id")[0]);
+            impasseId.text(i["anchor"]);
+
+            var impasseModule = $(shadow.find("#impasse-detection-module")[0]);
+            impasseModule.text(i["detect-module"] + ".");
+
+            var impasseClass = $(shadow.find("#impasse-detection-class")[0]);
+            impasseClass.text(i["detect-class"]);
+
+            var impasseSource = $(shadow.find("#impasse-source")[0]);
+            impasseSource.text(i["source"]);
+            hljs.highlightBlock(impasseSource[0]);
+
+            var impasseResolutions = $(shadow.find("#impasse-resolutions")[0]);
+            for (var r in i["resolutions"]) {
+                var resolution = i["resolutions"][r];
+
+                var goalSpan = $("<span>" + resolution["goal"] + "</span>");
+                var anchorSpan = $("<span class='resolution-anchor'>(" + resolution["anchor"] + ")</span>");
+                var resolutionDiv = $("<div></div>");
+
+                resolutionDiv.append(goalSpan);
+                resolutionDiv.append(anchorSpan);
+                impasseResolutions.append(resolutionDiv);
+            }
+
+            shadow.find("#impasse-source-expand").each(function(i, e) {
+                e.addEventListener("click", function(e) {
+                    shadow.find("#impasse-source-container").toggle();
+
+                    var expandIcon = shadow.find("#impasse-source-expand");
+                    if (expandIcon.hasClass("fa-caret-right")) {
+                        expandIcon.removeClass("fa-caret-right");
+                        expandIcon.addClass("fa-caret-down");
+                    } else {
+                        expandIcon.removeClass("fa-caret-down");
+                        expandIcon.addClass("fa-caret-right");
+                    }
+                });
+            });
+
+        }
+    }
+
+    customElements.define("ontoagent-impasse", OntoAgentImpasseElement);
+</script>

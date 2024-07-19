@@ -1,0 +1,232 @@
+<!--
+Component for rendering a single frame.
+
+Initialize in either of the following ways:
+
+    var frameElement = new OntoAgentFrameElement(frame);
+    someContainer.append(frameElement);
+
+    -or-
+
+    var frameElement = $("<ontoagent-frame></ontoagent-frame>")[0];
+    frameElement.frame = frame;
+    someContainer.append(frameElement);
+
+The frame input must be of the following format:
+
+{
+    id: "@TEST.FRAME.1",
+    fillers: [
+        {
+            slot: "SLOT",
+            facet: "FACET",
+            filler: ...,
+            type: "relation/direct",
+        }, ...
+    ]
+}
+
+Valid filler types are:
+
+    relation/direct
+    relation/indirect
+    attribute/text
+    attribute/number
+    attribute/boolean
+    attribute/enum
+    attribute/other
+
+Emits event "frame-selected":
+
+{
+    frame: "@TEST.FRAME.1",
+    navigate: "open-here" | "open-new"
+    // 'here' implies replace this frame with another; 'new' implies display a new frame
+}
+
+-->
+
+<template id="ontoagent-frame-element-template">
+
+    {% include 'includes/common-css.html' %}
+    {% include 'includes/common-js.html' %}
+
+    <style>
+        .card {
+            font-size: smaller;
+        }
+        .card-body {
+            padding: 0px;
+        }
+        .card-header {
+            padding: 0.3rem;
+        }
+        .frame-icon {
+            color: grey;
+            margin-left: 2px;
+        }
+        .frame-icon:hover {
+            color: black;
+        }
+        .table {
+            margin-bottom: 0px;
+        }
+        td.slot-facet {
+            padding-left: 17px;
+        }
+        .frame-id {
+            font-weight: bold;
+        }
+        .facet {
+            font-size: x-small;
+            color: gray;
+        }
+        .no-fillers-message {
+            font-style: italic;
+        }
+        .module {
+            font-size: x-small;
+            color: grey;
+            margin: 0px;
+        }
+        .executable {
+            margin: 0px;
+        }
+    </style>
+
+    <div class="card">
+        <div class="card-header">
+            <span class="frame-id"></span>
+            <span class="frame-icons float-right">
+                <i id="details-icon" class="fas fa-info-circle frame-icon"></i>
+                <i id="refresh-icon" class="fas fa-sync-alt frame-icon"></i>
+                <i id="collapse-icon" class="far fa-window-maximize frame-icon"></i>
+            </span>
+        </div>
+        <div class="card-body">
+            <table class="table table-sm">
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</template>
+
+<script>
+    let ontoAgentFrameElementTemplate = document.querySelector("#ontoagent-frame-element-template");
+
+    let fillerTypeIcons = {
+        "relation/direct": "<i class='fas fa-long-arrow-alt-right'></i>",
+        "relation/inverse": "<i class='fas fa-long-arrow-alt-left'></i>",
+        "attribute/text": "<i class='fas fa-quote-left'></i>",
+        "attribute/boolean": "<i class='fas fa-toggle-on'></i>",
+        "attribute/number": "<i class='fas fa-hashtag'></i>",
+        "attribute/enum": "<i class='fas fa-list-ul'></i>",
+        "attribute/exec": "<i class='fas fa-code'></i>",
+    };
+
+    class OntoAgentFrameElement extends HTMLElement {
+        constructor(frame) {
+            super();
+
+            this.shadow = this.attachShadow({mode: 'open'});
+            this.shadow.appendChild(ontoAgentFrameElementTemplate.content.cloneNode(true));
+
+            var self = this;
+            var shadow = $(this.shadow);
+            shadow.find("#details-icon").each(function(i, e) {
+                e.addEventListener("click", function(e) {
+                    shadow.find("span.facet").toggle();
+                });
+            });
+
+            shadow.find("#refresh-icon").each(function(i, e) {
+                e.addEventListener("click", function(e) {
+                    apiGetFrame(self.getAttribute("frame-id"), function(frame) {
+                        self.frame = frame;
+                    });
+                });
+            });
+
+            shadow.find("#collapse-icon").each(function(i, e) {
+                e.addEventListener("click", function(e) {
+                    shadow.find("table").toggle();
+                });
+            });
+
+            if (frame) {
+                this.frame = frame;
+            }
+        }
+
+        set frame(f) {
+            var self = this;
+            this.setAttribute("frame-id", f["id"]);
+
+            var shadow = $(this.shadow);
+
+            var frameId = $(shadow.find(".card .card-header .frame-id")[0]);
+            frameId.text(f["id"]);
+
+            var tableBody = $(shadow.find(".card .card-body .table tbody")[0]);
+            tableBody.empty();
+
+            if (f["fillers"].length == 0) {
+                var row = $("<tr></tr>");
+                row.append("<td><span class='no-fillers-message'>No fillers defined.</span></td>");
+                tableBody.append(row);
+            }
+
+            for (var i in f["fillers"]) {
+                var filler = f["fillers"][i];
+                var row = $("<tr></tr>");
+
+                row.append($("<td class='slot-facet'><span class='slot'>" + filler["slot"] + "</span><span class='facet'>." + filler["facet"] + "</span></td>"));
+                row.append($("<td>" + this.iconForFillerType(filler["type"]) + "</td>"));
+
+                if (filler["type"].startsWith("relation")) {
+                    row.append($("<td><a href='#' data-frame-id='" + filler["filler"] + "' class='relation'>" + filler["filler"] + "</a></td>"));
+                } else if (filler["type"] == "attribute/exec") {
+                    row.append($("<td><span class='attribute'><p class='module'>" + filler["filler"][0] + "</p><p class='executable'>" + filler["filler"][1] + "</span></p></td>"));
+                } else {
+                    row.append($("<td><span class='attribute'>" + filler["filler"] + "</span></td>"));
+                }
+
+                tableBody.append(row);
+            }
+
+            shadow.find(".relation").each(function(i, e) {
+                e.addEventListener("click", function(e) {
+                    var frameId = $(e.target).data("frame-id");
+                    var navigate = "open-new";
+                    if (e.altKey) {
+                        navigate = "open-here";
+                    }
+                    this.dispatchEvent(new CustomEvent("frame-selected", {bubbles: true, composed: true, detail: {"frameId": frameId, "navigate": navigate}}));
+                });
+            });
+        }
+
+        iconForFillerType(type) {
+            if (type in fillerTypeIcons) {
+                return fillerTypeIcons[type];
+            }
+            return "<i class='fas fa-equals'></i>";
+        }
+
+        addFrameIcon(icon, callback) {
+            var shadow = $(this.shadow);
+            var frameId = this.getAttribute("frame-id");
+
+            shadow.find(".frame-icons").each(function(i, e) {
+                var frameIcon = $("<i class='" + icon + " frame-icon'></i>");
+                e.append(frameIcon[0]);
+
+                frameIcon[0].addEventListener("click", function(e) {
+                    callback(frameId);
+                });
+            });
+        }
+    }
+
+    customElements.define("ontoagent-frame", OntoAgentFrameElement);
+</script>

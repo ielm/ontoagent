@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>OntoLang Input</title>
+
+    {% include 'includes/common-css.html' %}
+    {% include 'includes/common-js.html' %}
+    {% include 'includes/common-components.html' %}
+
+    <style>
+        #knowledge-input-container {
+            margin-top: 15px;
+        }
+
+        .knowledge-package {
+            font-size: small;
+            color: grey;
+        }
+
+        .knowledge-loaded {
+            color: green;
+        }
+
+        .knowledge-not-loaded:hover {
+            color: grey;
+        }
+
+        #ontolang-input-container {
+            margin-top: 15px;
+            display: none;
+        }
+
+        #ontolang-input-submit-button {
+            margin-top: 15px;
+        }
+
+        #ontolang-results-container {
+            padding-top: 15px;
+        }
+
+        .frame-container {
+            margin-bottom: 15px;
+        }
+    </style>
+
+    <script>
+        function renderKnowledge(knowledge) {
+            $("#knowledge-input-contents").empty();
+
+            for (var i in knowledge) {
+                var k = knowledge[i];
+
+                var template = document.getElementById('knowledge-input-template').innerHTML;
+                Mustache.parse(template, ["{|", "|}"]);
+                var rendered = Mustache.render(template, k);
+                $("#knowledge-input-contents").append($(rendered));
+            }
+        }
+
+        function renderOntoLangResponse(response) {
+            console.log(response);
+
+            $("#ontolang-results-container").empty();
+
+            var alertType = "alert-primary";
+            if (!response["success"]) {
+                alertType = "alert-danger";
+            }
+
+            var alert = $("<div class='alert " + alertType + "' role='alert'>" + response["message"] + "</div>");
+            $("#ontolang-results-container").append(alert);
+
+            for (var i in response["frames"]) {
+                var frame = response["frames"][i];
+                var frameElement = new OntoAgentFrameElement(frame);
+                var frameContainer = $("<div class='frame-container'></div>");
+                frameContainer.append(frameElement);
+                $("#ontolang-results-container").append(frameContainer);
+            }
+
+        }
+    </script>
+
+    <script>
+        $(document).ready(function() {
+            var payload = JSON.parse({{payload|tojson}});
+            renderKnowledge(payload["knowledge"]);
+
+            $("#knowledge-input-button").on("change", function(e) {
+                $("#knowledge-input-container").show();
+                $("#ontolang-input-container").hide();
+            });
+
+            $("#ontolang-input-button").on("change", function(e) {
+                $("#knowledge-input-container").hide();
+                $("#ontolang-input-container").show();
+            });
+
+            $(document).on("click", ".knowledge-not-loaded", function(e) {
+                var package = $(e.target).data("package");
+                var file = $(e.target).data("file");
+                apiLoadKnowledgeFile(package, file, function(knowledge) {
+                    renderKnowledge(knowledge);
+                });
+            });
+
+            $("#ontolang-input-submit-button").on("click", function(e) {
+                var ontolang = $("#ontolang-input-textarea").val();
+                apiExecuteOntoLang(ontolang, function(response) {
+                    renderOntoLangResponse(response);
+                });
+            });
+        });
+    </script>
+
+    <script id="knowledge-input-template" type="x-tmpl-mustache">
+        <div>
+            {| #loaded |}
+                <i class="knowledge-loaded far fa-check-circle"></i>
+            {| /loaded |}
+            {| ^loaded |}
+                <i class="knowledge-not-loaded far fa-circle" data-package="{| package |}" data-file="{| file |}"></i>
+            {| /loaded |}
+            <span class="knowledge-package">{| package |}.</span><span class="knowledge-file">{| file |}</span>
+        </div>
+    </script>
+
+</head>
+<body>
+
+    {% include 'includes/nav.html' %}
+    <script>
+        $(document).ready(function() {
+            $("#nav-ontolang").addClass("active");
+        });
+    </script>
+
+    <div class="container">
+        <div class="row" style="margin-top: 25px;">
+            <div class="col">
+                <div id="ontolang-input-toggles" class="btn-group btn-group-toggle" data-toggle="buttons">
+                    <label class="btn btn-sm btn-light active">
+                        <input type="radio" name="options" id="knowledge-input-button" autocomplete="off" checked> Knowledge
+                    </label>
+                    <label class="btn btn-sm btn-light">
+                        <input type="radio" name="options" id="ontolang-input-button" autocomplete="off"> OntoLang
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <div>
+                    <div id="knowledge-input-container">
+                        <div class="card">
+                            <div id="knowledge-input-contents" class="card-body"></div>
+                        </div>
+                    </div>
+                    <div id="ontolang-input-container">
+                        <div class="card">
+                            <div id="ontolang-input-contents" class="card-body">
+                                <div id="ontolang-input-textarea-group" class="input-group">
+                                    <textarea id="ontolang-input-textarea" class="form-control"></textarea>
+                                </div>
+                                <div class="input-group">
+                                    <input id="ontolang-input-submit-button" class="btn btn-sm btn-primary" type="button" value="Input">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="ontolang-results-container" class="col"></div>
+        </div>
+    </div>
+
+</body>
+</html>

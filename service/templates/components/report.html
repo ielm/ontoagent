@@ -1,0 +1,148 @@
+
+<template id="ontoagent-report-element-template">
+
+    {% include 'includes/common-css.html' %}
+    {% include 'includes/common-js.html' %}
+
+    <style>
+        .report-detail {
+            font-weight: bold;
+        }
+        #report-toggles > label {
+            font-size: 0.5rem;
+        }
+        #report-executable-module {
+            font-size: small;
+            color: gray;
+        }
+    </style>
+
+    <div class="card">
+        <div class="card-header">
+            <span id="report-anchor-id"></span>
+            <div class="float-right">
+                <div id="report-toggles" class="btn-group btn-group-toggle" data-toggle="buttons">
+                    <label class="btn btn-sm btn-light active">
+                        <input type="radio" name="options" id="report-details-button" autocomplete="off" checked> <i class="fas fa-info-circle"></i>
+                    </label>
+                    <label class="btn btn-sm btn-light">
+                        <input type="radio" name="options" id="report-list-button" autocomplete="off"> <i class="fas fa-list-ul"></i>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div id="report-anchor-details">
+                <table class="table table-sm table-borderless">
+                    <tbody>
+                        <tr>
+                            <td class="report-detail">Status</td>
+                            <td id="report-status"></td>
+                        </tr>
+                        <tr>
+                            <td class="report-detail">Validation</td>
+                            <td id="report-validation"></td>
+                        </tr>
+                        <tr>
+                            <td class="report-detail">Executable</td>
+                            <td id="report-execution">
+                                <span id="report-executable-module"></span>
+                                <span id="report-executable-class"></span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="report-detail">Timestamp</td>
+                            <td id="report-timestamp"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="report-contents-as-list"></div>
+        </div>
+    </div>
+
+</template>
+
+<script>
+    let ontoAgentReportElementTemplate = document.querySelector("#ontoagent-report-element-template");
+
+    class OntoAgentReportElement extends HTMLElement {
+        constructor(report) {
+            super();
+
+            this.shadow = this.attachShadow({mode: 'open'});
+            this.shadow.appendChild(ontoAgentReportElementTemplate.content.cloneNode(true));
+
+            var self = this;
+            var shadow = $(this.shadow);
+
+            if (report) {
+                this.report = report;
+            }
+        }
+
+        set report(r) {
+            var self = this;
+            this.setAttribute("report-anchor-id", r["anchor"]);
+
+            var shadow = $(this.shadow);
+
+            $(shadow.find("#report-anchor-id")[0]).text(r["anchor"]);
+
+            $(shadow.find("#report-status")[0]).text(r["status"]);
+            $(shadow.find("#report-status")[0]).attr("data-status", r["status"]);
+
+            var timestamp = new Date();
+            timestamp.setTime(r["timestamp"] / 1000000);
+            $(shadow.find("#report-timestamp")[0]).text(timestamp.toUTCString());
+
+            var validation = "Failed";
+            if (r["validation"]) {
+                validation = "Passed";
+            }
+            $(shadow.find("#report-validation")[0]).text(validation);
+
+            $(shadow.find("#report-executable-module")[0]).text(r["executable-module"] + ".");
+            $(shadow.find("#report-executable-class")[0]).text(r["executable-class"]);
+
+            this.renderReportAsFrames(r, $(shadow.find("#report-contents-as-list")[0]));
+
+            $(shadow.find("#report-contents-as-list")[0]).hide();
+
+            shadow.find("#report-details-button").each(function(i, e) {
+                e.addEventListener("change", function(e) {
+                    shadow.find("#report-anchor-details").show();
+                    shadow.find("#report-contents-as-list").hide();
+
+                    shadow.find("#report-details-button").parent().addClass("active");
+                    shadow.find("#report-list-button").parent().removeClass("active");
+                });
+            });
+
+            shadow.find("#report-list-button").each(function(i, e) {
+                e.addEventListener("change", function(e) {
+                    shadow.find("#report-anchor-details").hide();
+                    shadow.find("#report-contents-as-list").show();
+
+                    shadow.find("#report-details-button").parent().removeClass("active");
+                    shadow.find("#report-list-button").parent().addClass("active");
+                });
+            });
+        }
+
+        renderReportAsFrames(report, element) {
+            element.empty();
+
+            var frame = report["contents"];
+            var frameElement = new OntoAgentFrameElement(frame);
+            $(frameElement).on("frame-selected", function(e) {
+                var frameId = e.detail["frameId"];
+                console.log(frameId + " selected.");
+            });
+
+            element.append(frameElement);
+        }
+    }
+
+    customElements.define("ontoagent-report", OntoAgentReportElement);
+</script>

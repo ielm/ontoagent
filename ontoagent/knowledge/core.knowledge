@@ -1,0 +1,45 @@
+@ONT.SYSTEM-OBJECT  = { IS-A @ONT.MENTAL-OBJECT; };
+@ONT.EFFECTOR       = { IS-A @ONT.OBJECT; };
+@ONT.OPERATION      = { IS-A @ONT.SYSTEM-OBJECT; };
+@ONT.VARIABLE       = { IS-A @ONT.SYSTEM-OBJECT; };
+@ONT.VARMAP         = { IS-A @ONT.SYSTEM-OBJECT; };
+@ONT.BINDING        = { IS-A @ONT.SYSTEM-OBJECT; };
+@ONT.SYSTEM-SIGNAL  = { IS-A @ONT.SYSTEM-OBJECT; };
+@ONT.SYSTEM-REPORT  = { IS-A @ONT.SYSTEM-OBJECT; };
+@ONT.XMR            = { IS-A @ONT.SYSTEM-SIGNAL; };
+@ONT.AMR            = { IS-A @ONT.XMR; };
+@ONT.CMR            = { IS-A @ONT.XMR; };
+@ONT.MMR            = { IS-A @ONT.XMR; };
+@ONT.RMR            = { IS-A @ONT.XMR; };
+@ONT.TMR            = { IS-A @ONT.XMR; };
+@ONT.VMR            = { IS-A @ONT.XMR; };
+@ONT.RAW-TEXT       = { IS-A @ONT.INFORMATION; };
+
+@ONT.OUTPUT-EVENT   = { IS-A @ONT.EVENT; };
+
+@ONT.EVENT += {
+	IS-INSTANTIABLE	"HAS-EVENT-AS-PART";
+};
+
+#ReleasingAnEffector
+
+@ONT.RELEASE-EFFECTOR = {
+    IS-A            @ONT.MENTAL-EVENT;
+    HAS-OPERATION   @SYS.OPERATION.1?;
+    THEME           @ONT.EFFECTOR.1?;
+    HAS-VARIABLE    @SYS.VARIABLE.1?;
+};
+
+@SYS.OPERATION.1? = {
+    IS-A        @ONT.OPERATION;
+    EXECUTABLE  *ontoagent.knowledge.operations.core.ReleaseEffectorExecutable;
+};
+
+@SYS.VARIABLE.1? = {
+    IS-A        @ONT.VARIABLE;
+    VALUE       @ONT.EFFECTOR.1?;
+};
+
+@ONT.EFFECTOR.1? = {
+    IS-A        @ONT.EFFECTOR;
+};

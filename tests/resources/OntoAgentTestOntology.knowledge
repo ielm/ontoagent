@@ -1,0 +1,33 @@
+@ONT.ALL                = {};
+
+@ONT.EVENT              = { IS-A @ONT.ALL; };
+@ONT.OBJECT             = { IS-A @ONT.ALL; };
+@ONT.PROPERTY           = { IS-A @ONT.ALL; };
+
+@ONT.MENTAL-EVENT       = { IS-A @ONT.EVENT; };
+@ONT.PHYSICAL-EVENT     = { IS-A @ONT.EVENT; };
+
+@ONT.INTANGIBLE-OBJECT  = { IS-A @ONT.OBJECT; };
+@ONT.MENTAL-OBJECT      = { IS-A @ONT.OBJECT; };
+@ONT.PHYSICAL-OBJECT    = { IS-A @ONT.OBJECT; };
+@ONT.SOCIAL-OBJECT      = { IS-A @ONT.OBJECT; };
+
+@ONT.ATTRIBUTE          = { IS-A @ONT.PROPERTY; };
+@ONT.RELATION           = { IS-A @ONT.PROPERTY; };
+
+@ONT.ANIMATE            = { IS-A @ONT.PHYSICAL-OBJECT; };
+@ONT.INANIMATE          = { IS-A @ONT.PHYSICAL-OBJECT; };
+
+@ONT.AGENT              = { IS-A @ONT.ANIMATE; };
+@ONT.HUMAN              = { IS-A @ONT.ANIMATE; };
+
+@ONT.CASE-ROLE          = { IS-A @ONT.RELATION; };
+@ONT.AGENT              = { IS-A @ONT.CASE-ROLE; INVERSE "agent-of"; };
+@ONT.BENEFIARY          = { IS-A @ONT.CASE-ROLE; INVERSE "beneficiary-of"; };
+@ONT.DESTINATION        = { IS-A @ONT.CASE-ROLE; INVERSE "destination-of"; };
+@ONT.EXPERIENCER        = { IS-A @ONT.CASE-ROLE; INVERSE "experiencer-of"; };
+@ONT.INSTRUMENT         = { IS-A @ONT.CASE-ROLE; INVERSE "instrument-of"; };
+@ONT.LOCATION           = { IS-A @ONT.CASE-ROLE; INVERSE "location-of"; };
+@ONT.PATH               = { IS-A @ONT.CASE-ROLE; INVERSE "path-of"; };
+@ONT.SOURCE             = { IS-A @ONT.CASE-ROLE; INVERSE "source-of"; };
+@ONT.THEME              = { IS-A @ONT.CASE-ROLE; INVERSE "theme-of"; };

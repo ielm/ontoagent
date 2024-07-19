@@ -1,0 +1,136 @@
+<nav class="navbar navbar-expand-sm bg-dark navbar-dark fixed-top">
+
+    <ul class="navbar-nav">
+        <li id="nav-agenda" class="nav-item">
+            <a class="nav-link" href="/ui/agenda">Agenda</a>
+        </li>
+        <li id="nav-memory" class="nav-item">
+            <a class="nav-link" href="/ui/memory">Memory</a>
+        </li>
+        <li id="nav-ontolang" class="nav-item">
+            <a class="nav-link" href="/ui/ontolang">OntoLang</a>
+        </li>
+        <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="nav-signal" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Signal
+            </a>
+            <div class="dropdown-menu" aria-labelledby="nav-signal">
+                <a class="dropdown-item" href="/ui/signals">View Signals</a>
+                <a id="signal-speech" class="dropdown-item" href="#">Send Speech</a>
+                <a id="signal-release" class="dropdown-item" href="#">Send Release</a>
+            </div>
+        </li>
+    </ul>
+    <ul class="navbar-nav ml-auto">
+        <li id="pulse-button" class="nav-item">
+            <i class="fas fa-step-forward fa-2x"></i>
+        </li>
+        <li id="start-stop-button" class="nav-item">
+            <i class="fas fa-play fa-2x"></i>
+        </li>
+    </ul>
+
+</nav>
+
+<style>
+    #pulse-button > .fas {
+        color: rgba(255,255,255,.5);
+        cursor: pointer;
+        margin-right: 15px;
+    }
+    #pulse-button > .fas:hover {
+        color: rgba(255,255,255,.75);
+    }
+    #start-stop-button > .fas {
+        color: rgba(255,255,255,.5);
+        cursor: pointer;
+    }
+    #start-stop-button > .fas:hover {
+        color: rgba(255,255,255,.75);
+    }
+</style>
+
+<script>
+    function start() {
+        $.ajax({
+            url: "/heartbeat/start",
+            method: "POST",
+        }).done(function(data) {
+            $("#start-stop-button").html('<i class="fas fa-pause fa-2x"></i>');
+        }).fail(function(error) {
+            console.log(error);
+        });
+    }
+
+    function stop() {
+        $.ajax({
+            url: "/heartbeat/stop",
+            method: "POST",
+        }).done(function(data) {
+            $("#start-stop-button").html('<i class="fas fa-play fa-2x"></i>');
+        }).fail(function(error) {
+            console.log(error);
+        });
+    }
+
+    function pulse() {
+        $.ajax({
+            url: "/heartbeat/pulse",
+            method: "POST",
+        }).done(function(data) {
+            console.log(data);
+        }).fail(function(error) {
+            console.log(error);
+        });
+    }
+
+    function updateRunningCondition(data) {
+        if (!("running" in data)) { return; }
+
+        if (data["running"] == true) {
+            $("#start-stop-button").html('<i class="fas fa-pause fa-2x"></i>');
+            $("#pulse-button").hide();
+        } else {
+            $("#start-stop-button").html('<i class="fas fa-play fa-2x"></i>');
+            $("#pulse-button").show();
+        }
+    }
+</script>
+
+<script>
+    $(document).ready(function() {
+        $("#start-stop-button").on("click", function(e) {
+            if ($("#start-stop-button > .fa-play")[0] == undefined) {
+                stop();
+                $("#pulse-button").show();
+            } else {
+                start();
+                $("#pulse-button").hide();
+            }
+        });
+
+        $("#pulse-button").on("click", function(e) {
+            pulse();
+        });
+
+        $("#signal-speech").on("click", function(e) {
+            var signalSpeechModal = new OntoAgentSignalSpeechModal();
+            $("#component-modal-container").empty();
+            $("#component-modal-container").append(signalSpeechModal);
+
+            signalSpeechModal.show();
+        });
+    });
+
+    var socket = io.connect('http://' + document.domain + ':' + location.port);
+    socket.on("heartbeat pulsed", function(payload) {
+        updateRunningCondition(payload);
+        if (typeof onHeartbeatPulsed === "function") {
+            onHeartbeatPulsed(payload);
+        }
+    });
+</script>
+
+<div style="margin-bottom: 80px"></div>
+
+<div id="component-modal-container"></div>

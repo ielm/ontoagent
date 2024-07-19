@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>OntoAgent Memory</title>
+
+    {% include 'includes/common-css.html' %}
+    {% include 'includes/common-js.html' %}
+    {% include 'includes/common-components.html' %}
+
+    <style>
+        .frame-container {
+            margin-bottom: 15px;
+        }
+    </style>
+
+    <script>
+        function openFrameFromInput() {
+            var id = $("#open-frame-input").val();
+            if (!id.startsWith("@")) {
+                id = "@" + id;
+            }
+
+            apiGetFrame(id, function(frame) {
+                $("#open-frame-input").val("");
+                renderFrame(frame);
+            });
+        }
+
+        function renderFrame(frame) {
+            var frameContainer = $("<div class='frame-container'></div>");
+            var frameElement = new OntoAgentFrameElement(frame);
+
+            $(frameElement).on("frame-selected", function(e) {
+                var frameId = e.detail["frameId"];
+                var navigate = e.detail["navigate"];
+
+                if (navigate == "open-here") {
+                    apiGetFrame(frameId, function(frame) {
+                        e.currentTarget.frame = frame;
+                    });
+                } else if (navigate == "open-new") {
+                    apiGetFrame(frameId, function(frame) {
+                        renderFrame(frame);
+                    });
+                }
+            });
+            frameElement.addFrameIcon("fas fa-times-circle", function(frame) {
+                frameContainer.remove();
+            });
+
+            var left = $("#col-left");
+            var right = $("#col-right");
+
+            var container = left;
+            if (right.children().length < left.children().length) {
+                container = right;
+            }
+
+            frameContainer.append(frameElement);
+            container.append(frameContainer);
+        }
+    </script>
+
+    <script>
+        $(document).ready(function() {
+            apiGetFrame("@ONT.ALL", function(frame) {
+                renderFrame(frame);
+            });
+
+            $(document).on("click", "#open-button", function() {
+                openFrameFromInput();
+            });
+
+            $(document).on("keyup", "#open-frame-input", function(e) {
+                if (e.keyCode == 13) {
+                    openFrameFromInput();
+                }
+            });
+        });
+    </script>
+
+</head>
+<body>
+
+    {% include 'includes/nav.html' %}
+    <script>
+        $(document).ready(function() {
+            $("#nav-memory").addClass("active");
+        });
+    </script>
+
+    <div class="container">
+        <div class="row" style="margin-top: 25px;">
+            <div class="col">
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="frame-at-sign">@</span>
+                    </div>
+                    <input id="open-frame-input" type="text" class="form-control" placeholder="ONT.ALL" aria-label="Username" aria-describedby="frame-at-sign">
+                    <div class="input-group-append">
+                        <button id="open-button" class="btn btn-info" type="button">Open</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div id="col-left" class="col"></div>
+            <div id="col-right" class="col"></div>
+        </div>
+    </div>
+
+</body>
+</html>
